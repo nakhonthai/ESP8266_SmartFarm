@@ -9,3 +9,6 @@
 ## Used Boards
 - WiFi IoT Relay Board Based on ESP8266 R1.5
 - Capacitive Soil Moisture Sensor V1.2
+
+![image](https://raw.githubusercontent.com/nakhonthai/ESP8266_SmartFarm/master/ESP8266_Relay.jpg)
+![image](https://raw.githubusercontent.com/nakhonthai/ESP8266_SmartFarm/master/soilmoisture.jpg)
