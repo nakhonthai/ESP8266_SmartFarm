@@ -3,27 +3,31 @@
 Version 1.0  1/11/2018  Version 1.0   Base on Damon Borgnino
 */
 
-//#include <adc.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <FS.h> // FOR SPIFFS
 #include <ctype.h> // for isNumber check
 
-#define RELAYPIN 12 // D2
+#define RELAY_CH1 12
+#define RELAY_CH2 13
 
+//กำหนดค่าไวไฟเร้าเตอร์ที่จะให้ไปเชื่อมต่อ
 const char* ssid = "APRSTH";
 const char* password = "aprsthnetwork";
+boolean Client_Connect();
 
+//กำหนดค่าความชื้นเริ่มต้น
 int moistureOn = 700;
 int moistureOff = 400;
+
 String relayState = "OFF";
 const static String fName = "prop.txt";
 const static String dfName = "data.txt";
 int dataLines = 0;
 int maxFileData = 20;
 
-
+//ประกาศเว็บเซิร์ฟเวอร์พอร์ต 80
 ESP8266WebServer server(80);
 
 int moisture;
@@ -37,7 +41,7 @@ long interval = 20000;              // interval at which to read sensor
 // อ่านข้อมูลจากเซ็นเซอร์วัดความชื้นดิน Capacitive Soil Moisture V1.2
 void getmoisture() {
 
-	// อ่านสัญญาณอนาล๊อคแรงดัน 0-3.3V แปลงเป็นข้อมูลดิจิตอลขนาด 10บิต จะได้ข้อมูล 0-1023 ค่า
+	// อ่านสัญญาณอนาล๊อคแรงดัน 0-1.0V แปลงเป็นข้อมูลดิจิตอลขนาด 10บิต จะได้ข้อมูล 0-1023 ค่า
 	int sensorValue = analogRead(A0);
 
 	moisture = sensorValue&0x3FF;
@@ -46,13 +50,13 @@ void getmoisture() {
 	if (moisture >= moistureOn)
 	{
 		//ค่าที่วัดได้มีค่ามากกว่าหรือเท่ากับค่าที่ตั้งไว้ให้ เปิดไฟ
-		digitalWrite(RELAYPIN, HIGH);
+		digitalWrite(RELAY_CH1, HIGH);
 		relayState = "ON";
 	}
 	else if (moisture <= moistureOff)
 	{
 		//ค่าที่วัดได้มีค่าน้อยกว่าหรือเท่ากับค่าที่ตั้งไว้ให้ ปิดไฟ
-		digitalWrite(RELAYPIN, LOW);
+		digitalWrite(RELAY_CH1, LOW);
 		relayState = "OFF";
 	}
 }
@@ -180,14 +184,6 @@ String readDataFile()
 			dataLines++;
 			String str = f.readStringUntil('\n');
 			String switchState = str.substring(0, str.indexOf(":"));
-			/*
-			String tempF = str.substring(str.indexOf(":") + 1, str.indexOf(",")  );
-			//  String humid = str.substring(str.indexOf(",") + 1 );
-			//    String milliSecs = str.substring(str.indexOf("~") + 1 , str.indexOf("~"));
-			//   Serial.println(tempF);
-			//   Serial.println(humid);
-			//  Serial.println(str);
-			*/
 
 			returnStr += ",['" + switchState + "'," + str.substring(str.indexOf(":") + 1) + "]";
 		}
@@ -303,7 +299,7 @@ void setHTML()
 	webString += "<div>Moisture: " + String(moisture) + "</div>\n";
 	//webString += "<div>Humidity: " + String((int)humidity) + "%</div> \n";
 
-	if (digitalRead(RELAYPIN) == LOW)
+	if (digitalRead(RELAY_CH1) == LOW)
 		webString += "<div>Moisture is OFF</div>";
 	else
 		webString += "<div>Moisture is ON</div>";
@@ -407,9 +403,6 @@ void handle_submit() {
 
 		}
 
-		//if (tempOFF <= tempON)
-		//	webMessage += "Moisture On must be lower than Moisture Off<br>";
-
 		if (sRate < 10)
 			webMessage += "Sample Rate must be greater than or equal to 10<br>";
 
@@ -447,8 +440,6 @@ void handle_submit() {
 		webMessage = "Settings Updated";
 	}
 
-
-	//gettemperature();
 	getmoisture();
 
 	setHTML();
@@ -479,12 +470,12 @@ int status = WL_IDLE_STATUS;
 
 void setup(void)
 {
+	int timeout = 0;
 	// You can open the Arduino IDE Serial Monitor window to see what the code is doing
 	Serial.begin(115200);  // Serial connection from ESP-01 via 3.3v console cable
-	//WiFi.init(&Serial);    // initialize ESP module
 
-	pinMode(RELAYPIN, OUTPUT);
-	digitalWrite(RELAYPIN, LOW);
+	pinMode(RELAY_CH1, OUTPUT);
+	digitalWrite(RELAY_CH1, LOW);
 
 	//// check for the presence of the shield
 	//if (WiFi.status() == WL_NO_SHIELD) {
@@ -526,19 +517,19 @@ void setup(void)
 
 	// Connect to WiFi network
 	WiFi.begin(ssid, password);
-	//WiFi.config(IPAddress(192, 168, 0, 200), IPAddress(192, 168, 0, 1), IPAddress(255, 255, 255, 0));
 
 	Serial.print("\n\r \n\rWorking to connect");
 
 	// Wait for connection
+	timeout = 0;
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(500);
 		Serial.print(".");
+		if (timeout++ > 60) break;
 	}
-
-	//dht.begin();           // initialize temperature sensor
-	//delay(10);
-
+	if (timeout > 60) {
+		Serial.println("\n\rWiFi connection fail.");
+	}
 
 	SPIFFS.begin();
 	delay(10);
@@ -680,7 +671,15 @@ void loop(void)
 		readDataFile();
 	}
 
-	server.handleClient();
+	if (WiFi.status() != WL_CONNECTED) {
+			//WiFi Disconnect
+			WiFi.begin(ssid, password);
+			delay(5000);
+			Serial.println("WiFi ReConnect");
+	}
+	else {
+		server.handleClient();
+	}
 
 }
 
