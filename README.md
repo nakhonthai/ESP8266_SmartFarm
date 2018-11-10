@@ -11,11 +11,11 @@
 - Capacitive Soil Moisture Sensor V1.2
 
 ## ขั้นตอนการติดตั้งโปรแกรม Arduino
-1.เปิดโปรแกรม Arduio IDE จากซอร์สโค๊ด ESP8266_SmartFarm.ino
-2.ต่อสาย USB2Serial  GND,RX,TX,5V
-3.กดปุ่ม BTN2 ค้างไว้ แล้วเสียบ USB2Serial เข้าคอมพิวเตอร์ ไฟติดแล้วปล่อยปุ่ม BTN2 ได้
-4.ที่โปรแกรมม Arduino IDE กดปุ่ม Upload (ปุ่มลูกศรขวา)
-5.รอเสร็จ แล้วนำไปใช้งานได้
+- 1.เปิดโปรแกรม Arduio IDE จากซอร์สโค๊ด ESP8266_SmartFarm.ino
+- 2.ต่อสาย USB2Serial  GND,RX,TX,5V
+- 3.กดปุ่ม BTN2 ค้างไว้ แล้วเสียบ USB2Serial เข้าคอมพิวเตอร์ ไฟติดแล้วปล่อยปุ่ม BTN2 ได้
+- 4.ที่โปรแกรมม Arduino IDE กดปุ่ม Upload (ปุ่มลูกศรขวา)
+- 5.รอเสร็จ แล้วนำไปใช้งานได้
 
 ## Circuit
 ![image](https://raw.githubusercontent.com/nakhonthai/ESP8266_SmartFarm/master/circuit.gif)
